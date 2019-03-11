@@ -29,6 +29,7 @@ import static ch.usi.inf.nodeprof.ProfiledTagEnum.PROPERTY_READ;
 import static ch.usi.inf.nodeprof.ProfiledTagEnum.PROPERTY_WRITE;
 import static ch.usi.inf.nodeprof.ProfiledTagEnum.ROOT;
 import static ch.usi.inf.nodeprof.ProfiledTagEnum.UNARY;
+import static ch.usi.inf.nodeprof.ProfiledTagEnum.EXPRESSION;
 import static ch.usi.inf.nodeprof.ProfiledTagEnum.VAR_READ;
 import static ch.usi.inf.nodeprof.ProfiledTagEnum.VAR_WRITE;
 
@@ -51,6 +52,7 @@ import ch.usi.inf.nodeprof.jalangi.factory.BuiltinFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.ConditionalFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.EvalFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.EvalFunctionFactory;
+import ch.usi.inf.nodeprof.jalangi.factory.ExpressionFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.GetElementFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.GetFieldFactory;
 import ch.usi.inf.nodeprof.jalangi.factory.InvokeFactory;
@@ -130,11 +132,14 @@ public class JalangiAnalysis {
                             put("evalPost", EnumSet.of(EVAL));
                             put("evalFunctionPre", EnumSet.of(BUILTIN));
                             put("evalFunctionPost", EnumSet.of(BUILTIN));
+
+                            put("startExpression", EnumSet.of(EXPRESSION));
+                            put("endExpression", EnumSet.of(EXPRESSION));
                         }
                     });
 
     public static final Set<String> unimplementedCallbacks = Collections.unmodifiableSet(
-                    new HashSet<>(Arrays.asList("declare", "endExpression", "forinObject",
+                    new HashSet<>(Arrays.asList("declare", "forinObject",
                                     "instrumentCodePre", "instrumentCode", // TODO will those be
                                                                            // supported at all?
                                     "onReady", // TODO should this be ignored instead
@@ -231,6 +236,13 @@ public class JalangiAnalysis {
                             ProfiledTagEnum.ROOT,
                             new RootFactory(this.jsAnalysis,
                                             callbacks.get("functionEnter"), callbacks.get("functionExit")));
+        }
+
+        if (this.callbacks.containsKey("startExpression") || this.callbacks.containsKey("endExpression")) {
+            this.instrument.onCallback(
+                            ProfiledTagEnum.EXPRESSION,
+                            new ExpressionFactory(this.jsAnalysis,
+                                            callbacks.get("startExpression"), callbacks.get("endExpression")));
         }
 
         if (this.callbacks.containsKey("builtinEnter") || this.callbacks.containsKey("builtinExit")) {
